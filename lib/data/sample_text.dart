@@ -1,0 +1,1 @@
+const dummyTranslation = "번역 결과 : ";
