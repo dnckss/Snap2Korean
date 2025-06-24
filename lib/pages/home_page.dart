@@ -24,7 +24,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _pickImage() async {
     try {
-      // ✅ 시뮬레이터에서는 카메라/갤러리 진입만 되고 실제 선택은 제한됨
+      
       final picked = await picker.pickImage(source: ImageSource.gallery);
 
       if (picked == null) {
@@ -41,7 +41,7 @@ class _HomePageState extends State<HomePage> {
         _translatedText = '';
       });
 
-      // ✅ OCR
+      
       final inputImage = InputImage.fromFile(imageFile);
       final recognizer = TextRecognizer();
       final result = await recognizer.processImage(inputImage);
@@ -56,7 +56,7 @@ class _HomePageState extends State<HomePage> {
         Vibration.vibrate();
       }
     } catch (e) {
-      print("❌ 이미지 선택 중 에러 발생: $e");
+      print("이미지 선택 중 에러 발생: $e");
     }
   }
 
