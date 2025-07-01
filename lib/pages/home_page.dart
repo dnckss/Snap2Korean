@@ -218,15 +218,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   Future<void> _saveTranslationRecord(String imagePath) async {
     try {
-      final record = TranslationRecord(
-        id: _uuid.v4(),
+      await TranslationService.saveTranslationRecordWithImage(
         originalText: _extractedText,
         translatedText: _translatedText,
         imagePath: imagePath,
-        createdAt: DateTime.now(),
+        id: _uuid.v4(),
       );
-      
-      await TranslationService.saveTranslationRecord(record);
     } catch (e) {
       print('Error saving translation record: $e');
     }

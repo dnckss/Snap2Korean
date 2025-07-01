@@ -7,6 +7,9 @@ import '../styles/colors.dart';
 import '../styles/text_styles.dart';
 import '../constants/sizes.dart';
 import '../components/custom_button.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/painting.dart';
+import 'package:flutter/services.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -451,6 +454,7 @@ class _HistoryPageState extends State<HistoryPage> with TickerProviderStateMixin
     if (confirmed == true) {
       await TranslationService.deleteRecord(record.id);
       await _loadRecords();
+      setState(() {});
     }
   }
 

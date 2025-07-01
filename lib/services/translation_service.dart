@@ -3,11 +3,18 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models/translation_record.dart';
 import 'translation_api_service.dart';
 
 class TranslationService {
   static final ImagePicker _picker = ImagePicker();
+
+  // 앱 전용 document 디렉토리에서 파일 핸들러 가져오기
+  static Future<File> _getLocalFile() async {
+    final dir = await getApplicationDocumentsDirectory();
+    return File('${dir.path}/translation_records.json');
+  }
 
   // 이미지에서 텍스트 추출
   static Future<String> extractTextFromImage(XFile imageFile) async {
@@ -80,27 +87,51 @@ class TranslationService {
     }
   }
 
-  // 번역 기록 저장
-  static Future<void> saveTranslationRecord(TranslationRecord record) async {
+  // 이미지 파일을 앱 document 디렉토리로 복사하고 복사된 경로 반환
+  static Future<String> saveImageToLocalDir(String imagePath) async {
     try {
+      final dir = await getApplicationDocumentsDirectory();
+      final fileName = 'snap2korean_${DateTime.now().millisecondsSinceEpoch}${imagePath.split('.').last}';
+      final newPath = '${dir.path}/$fileName';
+      final newFile = await File(imagePath).copy(newPath);
+      return newFile.path;
+    } catch (e) {
+      debugPrint('이미지 복사 에러: $e');
+      return imagePath; // 실패 시 원본 경로라도 반환
+    }
+  }
+
+  // 번역 기록 저장 (이미지 복사 포함)
+  static Future<void> saveTranslationRecordWithImage({
+    required String originalText,
+    required String translatedText,
+    required String imagePath,
+    required String id,
+  }) async {
+    try {
+      final localImagePath = await saveImageToLocalDir(imagePath);
+      final record = TranslationRecord(
+        id: id,
+        originalText: originalText,
+        translatedText: translatedText,
+        imagePath: localImagePath,
+        createdAt: DateTime.now(),
+      );
       final records = await loadTranslationRecords();
-      records.insert(0, record); // 최신 기록을 맨 위에 추가
-      
-      // 최대 100개까지만 저장
+      records.insert(0, record);
       if (records.length > 100) {
         records.removeRange(100, records.length);
       }
-      
       await _saveToFile(records);
     } catch (e) {
-      debugPrint('번역 기록 저장 에러: $e');
+      debugPrint('번역 기록 저장(이미지) 에러: $e');
     }
   }
 
   // 번역 기록 로드
   static Future<List<TranslationRecord>> loadTranslationRecords() async {
     try {
-      final file = File('translation_records.json');
+      final file = await _getLocalFile();
       if (await file.exists()) {
         final jsonString = await file.readAsString();
         final List<dynamic> jsonList = json.decode(jsonString);
@@ -155,7 +186,7 @@ class TranslationService {
   // 파일에 저장
   static Future<void> _saveToFile(List<TranslationRecord> records) async {
     try {
-      final file = File('translation_records.json');
+      final file = await _getLocalFile();
       final jsonString = json.encode(records.map((record) => record.toJson()).toList());
       await file.writeAsString(jsonString);
     } catch (e) {
